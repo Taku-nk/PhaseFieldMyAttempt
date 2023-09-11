@@ -1,0 +1,33 @@
+*.out
+.DS_Store
+*.vtk
+*.vtu
+*.asv
+*.vts
+*.m~
+*.fig
+
+# Ignore file swap
+*.swp
+# Ignore folder idea of pycharm idea
+.idea/
+# Ignore file python compiled code
+*.pyc
+*.png
+*.pdf
+
+
+# Project specific
+input/
+test*/
+*_bak/
+*.out
+*.pptx
+*.pdf
+*.csv
+bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
