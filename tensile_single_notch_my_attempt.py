@@ -4,12 +4,21 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 import matplotlib as mpl
 import time
+from pathlib import Path
 import os
 import scipy.io
 tf.reset_default_graph()   # To clear the defined variables and operations of the previous cell
 tf.logging.set_verbosity(tf.logging.ERROR)
+
+
+import sys
+sys.path.append(
+    "C:\\Users\\taku\\Hiroshima-U-Master\\OneDrive - Hiroshima University\\ドキュメント\\1kouza\\MasterResearch\\PythonCode\\ReadAnsysResult")
+from sample_result import ResultSampler
+
 
 from utils.PINN2D_PF import CalculateUPhi
 
@@ -74,9 +83,53 @@ class PINN_PF(CalculateUPhi):
         
         return energy_u, energy_phi, hist
 
+
+def plot_save_loss_convergence(adam_buff, lbfgs_buff, save_path='', plot=False):
+    """save losses to one csv file
+    Args:
+        loss_list: list. [adam_buff, lbfgs_buff]
+        save_path: path like. .csv and .svg will be saved.
+        plot: bool. When plot==False, no visualization happen (but still saves the figure)
+    Returns:
+    """
+
+
+    adam_iter = np.arange(1, len(adam_buff)+1)
+    adam_loss_arr= np.array(adam_buff)
+    adam_loss_type = np.full_like(adam_loss_arr, 0) # 0 for adam, 1 for lbfgs 
+
+    lbfgs_iter = np.arange(len(adam_buff)+1, len(adam_buff)+len(lbfgs_buff)+1)
+    lbfgs_loss_arr = np.array(lbfgs_buff)
+    lbfgs_loss_type = np.full_like(lbfgs_loss_arr, 1)
+    
+    it = np.concatenate((adam_iter, lbfgs_iter), axis=0)
+    loss =np.concatenate((adam_loss_arr, lbfgs_loss_arr), axis=0) 
+    loss_type = np.concatenate((adam_loss_type, lbfgs_loss_type), axis=0)
+
+
+    loss_df = pd.DataFrame({'i':it, 'loss':loss, 'id':loss_type})
+    loss_df.to_csv(save_path, index=False)
+    
+
+
+
+
+
+        
+
+
+
+
+
+
 if __name__ == "__main__":
     
-    foldername = 'TensionPlate_results_2ndOrder'    
+    model_name = 'test_single_notch'
+    model_dir = Path(f'./{model_name}')
+    output_dir = model_dir/'output'
+    input_dir = model_dir/'input'
+    output_dir.mkdir(parents=False, exist_ok=True)
+
     
     nSteps = 2 # Total number of steps to observe the growth of crack 
     deltaV = 1e-3 # Displacement increment per step  
@@ -90,39 +143,50 @@ if __name__ == "__main__":
     
     # Domain bounds
     model['lb'] = np.array([0.0,0.0]) #Lower bound of the plate
-    model['ub'] = np.array([model['L'],model['W']]) # Upper bound of the plate
+    model['ub'] = np.array([model['L'],model['W']]) # Upper bound of the plate <- this is used for normalization of input 
 
     NN_param = dict()
     NN_param['layers'] = [2, 50, 50, 50, 3]
     NN_param['data_type'] = tf.float32
        
     
-    data = resd_csv()
-    X_f = data['X_f']
+    # data = resd_csv()
+    #---------------------------------------------------------------------------
+    # Read Input Data
+    #---------------------------------------------------------------------------
+    X_f = pd.read_csv(input_dir/'x_internal.csv').loc[:, ['xc','yc','area']].to_numpy()# X_f[:, 0:1]=xs, X_f[:, 1:2]=ys, X_f=[:, 2:3]
+    # history H place holder for train (maximum tensile strain energy density)     
     hist_f = np.transpose(np.array([np.zeros((X_f.shape[0]),dtype = np.float32)]))
+
        
-    
-    Grid = read_csvGrid() # Grid[:, 0] = x, Grid[:, 1] = y
+    Grid =pd.read_csv(input_dir/'x_validation.csv').loc[:, ['xc','yc']].to_numpy()# Grid[:, 0] = x, Grid[:, 1] = y
+    # history H place holder for validation (maximum tensile strain energy density)     
     hist_grid = np.transpose(np.array([np.zeros((Grid.shape[0]),dtype = np.float32)]))
+    #---------------------------------------------------------------------------
 
     phi_pred_old = hist_grid #Initializing phi_pred_old to zero
     
     modelNN = PINN_PF(model, NN_param)
     hist_f = np.transpose(np.array([np.zeros((X_f.shape[0]),dtype = np.float32)]))
-    num_train_its = 15000
+    # num_train_its = 15000
+    num_train_its = 150
 
 
 
     
     for iStep in range(0,nSteps):
-        
+        iter_output_dir = output_dir/f'iter_{iStep+1}'
+        iter_output_dir.mkdir(parents=False, exist_ok=True)
+                
         v_delta = deltaV*iStep                
         
         
         if iStep==0:
-            num_lbfgs_its = 10000
+            num_lbfgs_its = 100
+            # num_lbfgs_its = 10000
         else:
-            num_lbfgs_its = 1000
+            num_lbfgs_its = 10
+            # num_lbfgs_its = 1000
 
         start_time = time.time()                    
         modelNN.train(X_f, v_delta, hist_f, num_train_its, num_lbfgs_its)
@@ -141,6 +205,7 @@ if __name__ == "__main__":
 
         adam_buff = modelNN.loss_adam_buff
         lbfgs_buff = modelNN.lbfgs_buffer
+        plot_save_loss_convergence(adam_buff, lbfgs_buff, save_path=iter_output_dir/'loss.csv', plot=True)
         
         
         # 1D plot of phase field
