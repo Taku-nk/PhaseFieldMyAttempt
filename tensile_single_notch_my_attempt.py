@@ -169,8 +169,8 @@ if __name__ == "__main__":
     
     modelNN = PINN_PF(model, NN_param)
     hist_f = np.transpose(np.array([np.zeros((X_f.shape[0]),dtype = np.float32)]))
-    # num_train_its = 15000
-    num_train_its = 150
+    num_train_its = 15000
+    # num_train_its = 150
 
 
 
@@ -183,11 +183,11 @@ if __name__ == "__main__":
         
         
         if iStep==0:
-            num_lbfgs_its = 100
-            # num_lbfgs_its = 10000
+            # num_lbfgs_its = 100
+            num_lbfgs_its = 10000
         else:
-            num_lbfgs_its = 10
-            # num_lbfgs_its = 1000
+            # num_lbfgs_its = 10
+            num_lbfgs_its = 1000
 
         start_time = time.time()                    
         modelNN.train(X_f, v_delta, hist_f, num_train_its, num_lbfgs_its)
