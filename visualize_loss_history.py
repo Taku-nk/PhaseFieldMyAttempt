@@ -62,4 +62,5 @@ def plot_loss(file_path, save_path=''):
 
 if __name__ == '__main__':
     plot_loss("./test_single_notch/output/iter_1/loss.csv")
+    # plot_loss("./test_single_notch/output/iter_2/loss.csv")
 

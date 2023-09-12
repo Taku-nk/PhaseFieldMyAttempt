@@ -11,31 +11,26 @@ if __name__ == '__main__':
 
     import pandas as pd
 
-    # file_path = 'test_1results.xlsx'
-    # file_path = 'test_01_vary_on_fill_on_with_overlay_func\DEM_original_result.csv'
-    file_path = './test_small_hole/DEM_original_result.csv'
-    # key = 'S12'
+    iter_id = 1
+    file_path = f'./test_single_notch/output/iter_{iter_id}/DEM_original_result.csv'
+
     df = pd.read_csv(file_path)
 
     x = df.loc[:, 'x'].to_numpy()
     y = df.loc[:, 'y'].to_numpy()
 
 
-    val = df.loc[:, 'stress_x'].to_numpy()
+    # val = df.loc[:, 'phi'].to_numpy()
+    # val = df.loc[:, 'elastic_energy_density'].to_numpy()
+    # val = df.loc[:, 'fracture_energy_density'].to_numpy()
+    # val = df.loc[:, 'disp_x'].to_numpy()
+    val = df.loc[:, 'disp_y'].to_numpy()
     # val = df.loc[:, 'disp_x'].to_numpy()
 
-    # b =plt.scatter(x, y, c=val)
-    # plt.colorbar(b)
-    # plt.show()
-    # key = 'v'
+    # val = df.loc[:, 'stress_x'].to_numpy()
+
 
 
     viz(x, y, val, 50)
     # viz(x, y, val, np.linspace(0.99, 1.01, 2))
 
-    # excel_result = ExcelViewer(file_path)
-    # # print(excel_result.GetDataFRame())
-
-    # plotter = PlotExcel()
-    # plotter.plotResult(excel_result, key=key)
-    # plotter.plotResult(excel_result, key='S11', hole_radius=None)

@@ -6,12 +6,13 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import time
 from pathlib import Path
 import os
 import scipy.io
 tf.reset_default_graph()   # To clear the defined variables and operations of the previous cell
-tf.logging.set_verbosity(tf.logging.ERROR)
+# tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 import sys
@@ -199,16 +200,39 @@ if __name__ == "__main__":
         # hist_grid is compared using tf.maximum and relaced with appropriate values.
         u_pred, v_pred, phi_pred, elas_energy_pred, frac_energy_pred, hist_grid = modelNN.predict(Grid, hist_grid, v_delta)
         
-        phi_pred = np.maximum(phi_pred, phi_pred_old) # has to decrese
+        phi_pred = np.maximum(phi_pred, phi_pred_old) # has to increase. No spontaneous mending.
         phi_pred_old = phi_pred
-        
 
+        # ----------------------------------------------------------------------
+        # Predict and save result
+        # ----------------------------------------------------------------------
+        sampler = ResultSampler()
+        sampler.load_numpy_result(
+            Grid[:, 0], Grid[:, 1],
+            value_dict={
+                'disp_x': u_pred.flatten(),
+                'disp_y': v_pred.flatten(),
+                'phi': phi_pred.flatten(),
+                'elastic_energy_density': elas_energy_pred.flatten(),
+                'fracture_energy_density': frac_energy_pred.flatten(),
+                'hist': hist_grid.flatten()
+                # 'stress_x': sigma_x_pred.flatten(),
+                # 'stress_y': sigma_y_pred.flatten(),
+                # 'stress_xy': sigma_xy_pred.flatten(),
+            }
+        )
+        sampler.save_original(iter_output_dir/'DEM_original_result.csv')
+
+        # save loss
         adam_buff = modelNN.loss_adam_buff
         lbfgs_buff = modelNN.lbfgs_buffer
         plot_save_loss_convergence(adam_buff, lbfgs_buff, save_path=iter_output_dir/'loss.csv', plot=True)
         
+
         
+        # ----------------------------------------------------------------------
         # 1D plot of phase field
+        # ----------------------------------------------------------------------
         xVal = 0.25
         nPredY = 2000
         xPred = xVal*np.ones((nPredY,1))
@@ -217,8 +241,15 @@ if __name__ == "__main__":
         phi_pred_1d = modelNN.predict_phi(xyPred)
         phi_exact = np.exp(-np.absolute(yPred-0.5)/model['l'])
         
+        plt.plot(yPred.flatten(), phi_pred_1d.flatten(), c='tab:blue', ls='-', label=f'DEM iter={iStep+1}')
+        plt.plot(yPred.flatten(), phi_exact.flatten(), c='tab:orange', ls=':', label='Exact')
+        plt.legend()
+        plt.savefig(iter_output_dir/'comparison_1d.svg', format='svg')
+        plt.cla()
+        # plt.show()
+        
         error_phi = (np.linalg.norm(phi_exact-phi_pred_1d,2)/np.linalg.norm(phi_exact,2))
         print('Relative error phi: %e' % (error_phi))
         
         print('Completed '+ str(iStep+1) +' of '+str(nSteps)+'.')    
-        
+
