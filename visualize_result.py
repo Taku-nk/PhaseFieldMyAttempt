@@ -12,7 +12,8 @@ if __name__ == '__main__':
     import pandas as pd
 
     iter_id = 2
-    file_path = f'./test_single_notch/output/iter_{iter_id}/DEM_original_result.csv'
+    file_path = f'./test_notch_blender_hist/output/iter_{iter_id}/DEM_original_result.csv'
+    # file_path = f'./test_single_notch/output/iter_{iter_id}/DEM_original_result.csv'
 
     df = pd.read_csv(file_path)
 
@@ -20,16 +21,17 @@ if __name__ == '__main__':
     y = df.loc[:, 'y'].to_numpy()
 
 
-    # val = df.loc[:, 'phi'].to_numpy()
+    val = df.loc[:, 'phi'].to_numpy()
     # val = df.loc[:, 'elastic_energy_density'].to_numpy()
     # val = df.loc[:, 'fracture_energy_density'].to_numpy()
     # val = df.loc[:, 'disp_x'].to_numpy()
-    val = df.loc[:, 'disp_y'].to_numpy()
+    # val = df.loc[:, 'disp_y'].to_numpy()
 
     # val = df.loc[:, 'stress_x'].to_numpy()
 
 
 
-    viz(x, y, val, 20)
+    # viz(x, y, val, 20)
+    viz(x, y, val, 20, contour_line=False)
     # viz(x, y, val, np.linspace(0.99, 1.01, 2))
 

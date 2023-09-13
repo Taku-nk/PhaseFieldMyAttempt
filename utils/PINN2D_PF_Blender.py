@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 import time
 
-class CalculateUPhi:
+class CalculateUPhiBlender:
     # Initialize the class
     def __init__(self, model, NN_param):
         
@@ -26,15 +26,15 @@ class CalculateUPhi:
         self.mu = 0.5*self.E/(1+self.nu)
         
         # Phase field parameters
-        self.cEnerg = 2.7 # Critical energy release rate of the material
-        # this is the BC, you can choose what ever you like. 
-        # This BC is phi ~= 0.98. No crack at the start but it surely cracks in the first step.
-        # why? -> this is because we wanna see changes from state without crack to  with crack.
-        self.B = 92 # and also you cannot specify phi=1 for BC because of the formulation. B=1/(1-phi)
+        self.cEnerg = model['cEnerg'] # Critical energy release rate of the material  2.7 is the original
+        self.B = model['B'] # and also you cannot specify phi=1 for BC because of the formulation. B=1/(1-phi)
         self.l = model['l']
         
         self.lb = model['lb'] # used for input normalization input will first be transformed into [-1, +1]
         self.ub = model['ub'] # used for input normalization
+
+        self.hist_init = tf.convert_to_tensor(model['hist_init']) # np array
+
         
         self.layers = NN_param['layers']
         self.data_type = NN_param['data_type']
@@ -120,12 +120,13 @@ class CalculateUPhi:
     
     def net_hist(self,x,y):
         
-        shape = tf.shape(x)
-        init_hist = tf.zeros((shape[0],shape[1]), dtype = np.float32)
-        dist = tf.where(x > self.crackTip, tf.sqrt((x-0.5)**2 + (y-0.5)**2), tf.abs(y-0.5))
-        # With tf.where function, you can specify only near the crack
-        init_hist = tf.where(dist < 0.5*self.l, self.B*self.cEnerg*0.5*(1-(2*dist/self.l))/self.l, init_hist)
-        
+        # shape = tf.shape(x)
+        # init_hist = tf.zeros((shape[0],shape[1]), dtype = np.float32)
+        # dist = tf.where(x > self.crackTip, tf.sqrt((x-0.5)**2 + (y-0.5)**2), tf.abs(y-0.5))
+        # # With tf.where function, you can specify only near the crack
+        # init_hist = tf.where(dist < 0.5*self.l, self.B*self.cEnerg*0.5*(1-(2*dist/self.l))/self.l, init_hist)
+        init_hist = self.hist_init
+        # init hist can be supplied through blender numpy data.
         return init_hist
     
     def net_update_hist(self,x,y,u_x,v_y,u_xy,hist):
