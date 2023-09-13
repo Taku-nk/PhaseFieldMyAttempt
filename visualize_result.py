@@ -21,10 +21,10 @@ if __name__ == '__main__':
 
 
     # val = df.loc[:, 'phi'].to_numpy()
-    val = df.loc[:, 'elastic_energy_density'].to_numpy()
+    # val = df.loc[:, 'elastic_energy_density'].to_numpy()
     # val = df.loc[:, 'fracture_energy_density'].to_numpy()
     # val = df.loc[:, 'disp_x'].to_numpy()
-    # val = df.loc[:, 'disp_y'].to_numpy()
+    val = df.loc[:, 'disp_y'].to_numpy()
 
     # val = df.loc[:, 'stress_x'].to_numpy()
 
