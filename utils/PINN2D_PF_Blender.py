@@ -60,6 +60,7 @@ class CalculateUPhiBlender:
         self.traction_pred = self.net_traction(self.x_f_tf,self.y_f_tf,self.vdelta_tf)
         # just for checking body force residual.
         self.f_u_pred, self.f_v_pred = self.net_f(self.x_f_tf,self.y_f_tf,self.vdelta_tf)
+        self.sigma_x_pred, self.sigma_y_pred, self.tau_xy_pred = self.net_sterss(self.x_f_tf, self.y_f_tf, self.vdelta_tf)
         
         # Loss
         self.loss_energy_u = tf.reduce_sum(self.energy_u_pred*self.wt_f_tf) 
@@ -183,6 +184,22 @@ class CalculateUPhiBlender:
         
         return f_u, f_v 
     
+    def net_sterss(self, x, y, vdelta):
+        """ Calculate stress """
+        u, v = self.net_uv(x,y,vdelta)
+        
+        u_x = tf.gradients(u,x)[0]
+        v_y = tf.gradients(v,y)[0]
+        u_y = tf.gradients(u,y)[0]
+        v_x = tf.gradients(v,x)[0]
+        u_xy = (u_y + v_x)
+        
+        sigmaX = self.c11*u_x + self.c12*v_y
+        sigmaY = self.c21*u_x + self.c22*v_y
+        tauXY = self.c33*u_xy
+        return sigmaX, sigmaY, tauXY
+
+    
     def net_traction(self,x,y,vdelta):
         """ used to check shear stress at the bottom (must be zero because of the roller support) """
         u, v = self.net_uv(x,y,vdelta)
@@ -245,7 +262,14 @@ class CalculateUPhiBlender:
         energy_phi_star = self.sess.run(self.energy_phi_pred, tf_dict)
         hist_star = self.sess.run(self.hist_pred, tf_dict)
         
-        return u_star, v_star, phi_star, energy_u_star, energy_phi_star, hist_star
+        sigma_x_star = self.sess.run(self.sigma_x_pred, tf_dict)
+        sigma_y_star = self.sess.run(self.sigma_y_pred, tf_dict)
+        tau_xy_star = self.sess.run(self.tau_xy_pred, tf_dict)
+        
+        return u_star, v_star, phi_star, \
+            energy_u_star, energy_phi_star, hist_star,\
+            sigma_x_star, sigma_y_star, tau_xy_star
+
     
     def predict_traction(self, X_star, v_delta):
         

@@ -202,13 +202,14 @@ if __name__ == "__main__":
         start_time = time.time()                    
         modelNN.train(X_f, v_delta, hist_f, num_train_its, num_lbfgs_its)
         
-        _, _, phi_f, _, _, hist_f = modelNN.predict(X_f[:,0:2], hist_f, v_delta) # Computing the history function for the next step        
+        _, _, phi_f, _, _, hist_f, _, _, _ = modelNN.predict(X_f[:,0:2], hist_f, v_delta) # Computing the history function for the next step        
                               
         elapsed = time.time() - start_time
         print('Training time: %.4f' % (elapsed))
         # You can naively put hist_grid (initial zero) because, in predict, 
         # hist_grid is compared using tf.maximum and relaced with appropriate values.
-        u_pred, v_pred, phi_pred, elas_energy_pred, frac_energy_pred, hist_grid = modelNN.predict(Grid, hist_grid, v_delta)
+        u_pred, v_pred, phi_pred, elas_energy_pred, frac_energy_pred, hist_grid, \
+             sigma_x_pred, sigma_y_pred, tau_xy_pred = modelNN.predict(Grid, hist_grid, v_delta)
         
         phi_pred = np.maximum(phi_pred, phi_pred_old) # has to increase. No spontaneous mending.
         phi_pred_old = phi_pred
@@ -225,10 +226,10 @@ if __name__ == "__main__":
                 'phi': phi_pred.flatten(),
                 'elastic_energy_density': elas_energy_pred.flatten(),
                 'fracture_energy_density': frac_energy_pred.flatten(),
-                'hist': hist_grid.flatten()
-                # 'stress_x': sigma_x_pred.flatten(),
-                # 'stress_y': sigma_y_pred.flatten(),
-                # 'stress_xy': sigma_xy_pred.flatten(),
+                'hist': hist_grid.flatten(),
+                'stress_x': sigma_x_pred.flatten(),
+                'stress_y': sigma_y_pred.flatten(),
+                'stress_xy': tau_xy_pred.flatten()
             }
         )
         sampler.save_original(iter_output_dir/'DEM_original_result.csv')
